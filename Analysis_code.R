@@ -218,7 +218,7 @@ edx %>% group_by(rating) %>%
 mu <- mean(edx$rating)
 
 # Predict unknown ratings with mu and calculate the RMSE
-RMSE(mu, final_holdout_test$rating)
+RMSE(final_holdout_test$rating, mu)
 
 ######################
 # Method 2: Use a movie bias (b) to average the rankings for each movie (m)
@@ -236,7 +236,7 @@ predicted_ratings <- final_holdout_test %>%
   pull(pred)
 
 # Calculate RMSE of movie bias effect
-RMSE(predicted_ratings, final_holdout_test$rating)
+RMSE(final_holdout_test$rating, predicted_ratings)
 
 ###############################
 # Method 3: Use movie bias (b_m) and add a user bias (b) to average the rankings for each user (u)
@@ -256,7 +256,7 @@ predicted_ratings <- final_holdout_test %>%
   pull(pred)
 
 # Calculate RMSE of movie and user biases effect
-RMSE(predicted_ratings, final_holdout_test$rating)
+RMSE(final_holdout_test$rating, predicted_ratings)
 
 
 ###########################################
@@ -286,7 +286,7 @@ rmses <- sapply(lambdas, function(l){
     mutate(pred = mu + b_m + b_u) %>%
     pull(pred)
   # Output RMSE of these predictions
-  return(RMSE(predicted_ratings, final_holdout_test$rating))
+  return(RMSE(final_holdout_test$rating, predicted_ratings))
 })
 
 # Plot of RMSE vs lambdas
@@ -313,7 +313,7 @@ b_m <- edx %>%
   group_by(movieId) %>%
   summarize(b_m = sum(rating - mu)/(n()+lam))
 
-# Compute final regularize user bias term
+# Compute final regularized user bias term
 b_u <- edx %>% 
   left_join(b_m, by="movieId") %>%
   group_by(userId) %>%
@@ -327,4 +327,4 @@ predicted_ratings <- final_holdout_test %>%
   pull(pred)
                                                   
 # Output final RMSE of these predictions
-RMSE(predicted_ratings, final_holdout_test$rating)
+RMSE(final_holdout_test$rating, predicted_ratings)
