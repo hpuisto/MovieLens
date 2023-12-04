@@ -99,6 +99,11 @@ library(data.table)
 # Initial data exploration
 ##########################################################
 
+# The RMSE function that will be used in this project is:
+RMSE <- function(true_ratings = NULL, predicted_ratings = NULL) {
+    sqrt(mean((true_ratings - predicted_ratings)^2))
+}
+
 ##########################################################
 # Number of columns and rows in edx and final_holdout_test datasets
 dim(edx)
