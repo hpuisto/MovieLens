@@ -86,13 +86,13 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 if(!require(knitr)) install.packages("knitr", repos = "http://cran.us.r-project.org")
-if(!require(raster)) install.packages("raster", repos = "http://cran.us.r-project.org")
+if(!require(terra)) install.packages("terra", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
 
 library(tidyverse)
 library(caret)
 library(knitr)
-library(raster)
+library(terra)
 library(data.table)
 
 ##########################################################
