@@ -187,6 +187,13 @@ edx %>% group_by(title) %>%
   arrange(desc(n_ratings))
 
 ##########################################################
+# Movies with only one rating for edx dataset
+edx %>% group_by(title) %>%
+  summarize(n_ratings = n()) %>%
+  filter(n_ratings==1) %>%
+  count() %>% pull()
+
+##########################################################
 # Most common ratings given for edx dataset
 edx %>% group_by(rating) %>%
   summarize(n_ratings = n()) %>%
