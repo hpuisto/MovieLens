@@ -248,7 +248,7 @@ RMSE(predicted_ratings, final_holdout_test$rating)
 
 
 ###########################################
-# Method 4: Use regularization on movie and user biases effect to reduce errors
+# Method 4: Use regularization on movie and user biases method to reduce errors
 ###########################################
 
 # Determine best lambda from a sequence
@@ -267,7 +267,7 @@ rmses <- sapply(lambdas, function(l){
     left_join(b_m, by="movieId") %>%
     group_by(userId) %>%
     summarize(b_u = sum(rating - b_m - mu)/(n()+l))
-  # Compute predictions on final_holdout_test set based on these above terms
+  # Compute predictions on final_holdout_test set based on the above biases
   predicted_ratings <- final_holdout_test %>% 
     left_join(b_m, by = "movieId") %>%
     left_join(b_u, by = "userId") %>%
