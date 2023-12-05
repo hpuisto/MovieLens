@@ -135,9 +135,6 @@ hist_users <- edx %>%
   labs(title = "Histogram of Ratings per User",
        x = "User ID", y = "Number of Ratings", fill = element_blank()) +
   theme_classic()
-
-ggarrange(hist_movies, hist_users,
-          ncol = 2, nrow = 1)
 ```
 
 Users were also more likely to provide integer ratings over half-ratings.
