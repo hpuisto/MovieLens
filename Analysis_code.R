@@ -7,82 +7,6 @@
 # Github: https://github.com/hpuisto/movielens
 ##########################################################
 
-##########################################################
-# Import data and create datasets
-# This first section of code was provided by the course
-##########################################################
-
-##########################################################
-# Create edx and final_holdout_test sets 
-##########################################################
-
-# Note: this process could take a couple of minutes
-
-if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
-if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
-
-library(tidyverse)
-library(caret)
-
-# MovieLens 10M dataset:
-# https://grouplens.org/datasets/movielens/10m/
-# http://files.grouplens.org/datasets/movielens/ml-10m.zip
-
-options(timeout = 120)
-
-dl <- "ml-10M100K.zip"
-if(!file.exists(dl))
-  download.file("https://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
-
-ratings_file <- "ml-10M100K/ratings.dat"
-if(!file.exists(ratings_file))
-  unzip(dl, ratings_file)
-
-movies_file <- "ml-10M100K/movies.dat"
-if(!file.exists(movies_file))
-  unzip(dl, movies_file)
-
-ratings <- as.data.frame(str_split(read_lines(ratings_file), fixed("::"), simplify = TRUE),
-                         stringsAsFactors = FALSE)
-colnames(ratings) <- c("userId", "movieId", "rating", "timestamp")
-ratings <- ratings %>%
-  mutate(userId = as.integer(userId),
-         movieId = as.integer(movieId),
-         rating = as.numeric(rating),
-         timestamp = as.integer(timestamp))
-
-movies <- as.data.frame(str_split(read_lines(movies_file), fixed("::"), simplify = TRUE),
-                        stringsAsFactors = FALSE)
-colnames(movies) <- c("movieId", "title", "genres")
-movies <- movies %>%
-  mutate(movieId = as.integer(movieId))
-
-movielens <- left_join(ratings, movies, by = "movieId")
-
-# Final hold-out test set will be 10% of MovieLens data
-set.seed(1, sample.kind="Rounding") # if using R 3.6 or later
-# set.seed(1) # if using R 3.5 or earlier
-test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
-edx <- movielens[-test_index,]
-temp <- movielens[test_index,]
-
-# Make sure userId and movieId in final hold-out test set are also in edx set
-final_holdout_test <- temp %>% 
-  semi_join(edx, by = "movieId") %>%
-  semi_join(edx, by = "userId")
-
-# Add rows removed from final hold-out test set back into edx set
-removed <- anti_join(temp, final_holdout_test)
-edx <- rbind(edx, removed)
-
-rm(dl, ratings, movies, test_index, temp, movielens, removed)
-
-##########################################################
-##########################################################
-# Begin personal code
-##########################################################
-##########################################################
-
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 if(!require(knitr)) install.packages("knitr", repos = "http://cran.us.r-project.org")
@@ -101,7 +25,7 @@ library(data.table)
 
 # The RMSE function that will be used in this project is:
 RMSE <- function(true_ratings = NULL, predicted_ratings = NULL) {
-    sqrt(mean((true_ratings - predicted_ratings)^2))
+  sqrt(mean((true_ratings - predicted_ratings)^2))
 }
 
 ##########################################################
@@ -179,8 +103,8 @@ hist_genres <- ggplot(edx_genres, aes(x = reorder(genres, genres, function(x) - 
   geom_bar(fill = "black") +
   labs(title = "Histogram of Ratings per Genre",
        x = "Genre", y = "Number of Ratings") +
-   scale_y_continuous(labels = paste0(1:4, "M"),
-                      breaks = 10^6 * 1:4) +
+  scale_y_continuous(labels = paste0(1:4, "M"),
+                     breaks = 10^6 * 1:4) +
   coord_flip() +
   theme_classic()
 hist_genres
@@ -261,7 +185,7 @@ b_g <- edx_genres %>%
   left_join(b_m, by='movieId') %>%
   left_join(b_u, by='userId') %>%
   group_by(genres) %>%
-  summarize(b_g = mean(rating - mu - b_m – b_u))
+  summarize(b_g = mean(rating - mu - b_m - b_u))
 
 # Predict new ratings for each movie on extended test dataset (test_genres) using both movie and user biases
 predicted_ratings <- test_genres %>% 
@@ -299,7 +223,7 @@ rmses <- sapply(lambdas, function(l){
     left_join(b_m, by='movieId') %>%
     left_join(b_u, by='userId') %>%
     group_by(genres) %>%
-    summarize(b_g = sum(rating - mu - b_m – b_u)/(n()+l))
+    summarize(b_g = sum(rating - mu - b_m - b_u)/(n()+l))
   predicted_ratings <- test_genres %>% 
     left_join(b_m, by='movieId') %>%
     left_join(b_u, by='userId') %>%
@@ -311,7 +235,7 @@ rmses <- sapply(lambdas, function(l){
 })
 
 # Plot of RMSE vs lambdas
-plot_rmses <- qplot(lambdas, rmses)
+plot_rmses <- ggplot(data.frame(lambdas, rmses), aes(lambdas, rmses)) + geom_line()
 # Print minimum RMSE 
 min(rmses)
 
@@ -345,7 +269,7 @@ b_g <- edx_genres %>%
   left_join(b_m, by='movieId') %>%
   left_join(b_u, by='userId') %>%
   group_by(genres) %>%
-  summarize(b_g = sum(rating - mu - b_m – b_u)/(n()+lam))
+  summarize(b_g = sum(rating - mu - b_m - b_u)/(n()+lam))
 
 # Compute final predictions on final_holdout_test set based on the above biases
 predicted_ratings <- test_genres %>% 
