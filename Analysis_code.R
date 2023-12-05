@@ -192,13 +192,6 @@ edx %>% group_by(title) %>%
   arrange(desc(n_ratings))
 
 ##########################################################
-# Movies with only one rating for edx dataset
-edx %>% group_by(title) %>%
-  summarize(n_ratings = n()) %>%
-  filter(n_ratings==1) %>%
-  count() %>% pull()
-
-##########################################################
 # Most common ratings given for edx dataset
 edx %>% group_by(rating) %>%
   summarize(n_ratings = n()) %>%
@@ -260,7 +253,29 @@ RMSE(final_holdout_test$rating, predicted_ratings)
 
 
 ###########################################
-# Method 4: Use regularization on movie and user biases method to reduce errors
+# Method 4: Use movie bias (b_m), user bias (b_u), and add genre bias (b) to average the rankings for each genre (g)
+###########################################
+
+# Create genre bias term, b_g, on extended version of edx: edx_genres calculated above
+b_g <- edx_genres %>% 
+  left_join(b_m, by='movieId') %>%
+  left_join(b_u, by='userId') %>%
+  group_by(genres) %>%
+  summarize(b_g = mean(rating - mu - b_m – b_u))
+
+# Predict new ratings for each movie on extended test dataset (test_genres) using both movie and user biases
+predicted_ratings <- test_genres %>% 
+  left_join(b_m, by='movieId') %>%
+  left_join(b_u, by='userId') %>%
+  left_join(b_g, by='genres') %>%
+  mutate(pred = mu + b_m + b_u + b_g) %>%
+  pull(pred)
+
+# Calculate RMSE of movie, user, and genre biases effect
+RMSE(test_genres$rating, predicted_ratings)
+
+###########################################
+# Method 5: Use regularization on movie and user biases effect to reduce errors
 ###########################################
 
 # Determine best lambda from a sequence
@@ -279,14 +294,20 @@ rmses <- sapply(lambdas, function(l){
     left_join(b_m, by="movieId") %>%
     group_by(userId) %>%
     summarize(b_u = sum(rating - b_m - mu)/(n()+l))
-  # Compute predictions on final_holdout_test set based on the above biases
-  predicted_ratings <- final_holdout_test %>% 
-    left_join(b_m, by = "movieId") %>%
-    left_join(b_u, by = "userId") %>%
-    mutate(pred = mu + b_m + b_u) %>%
+  # Compute regularized genre bias term on extended version of edx
+  b_g <- edx_genres %>% 
+    left_join(b_m, by='movieId') %>%
+    left_join(b_u, by='userId') %>%
+    group_by(genres) %>%
+    summarize(b_g = sum(rating - mu - b_m – b_u)/(n()+l))
+  predicted_ratings <- test_genres %>% 
+    left_join(b_m, by='movieId') %>%
+    left_join(b_u, by='userId') %>%
+    left_join(b_g, by='genres') %>%
+    mutate(pred = mu + b_m + b_u + b_g) %>%
     pull(pred)
   # Output RMSE of these predictions
-  return(RMSE(final_holdout_test$rating, predicted_ratings))
+  return(RMSE(test_genres$rating, predicted_ratings))
 })
 
 # Plot of RMSE vs lambdas
@@ -302,7 +323,7 @@ min(rmses)
 ##########################################################
 
 ######################################################
-# Final model: Regularized movie and user bias effects
+# Final model: Regularized movie, user, and genre bias effects
 ######################################################
 
 # The final linear model with the minimizing lambda
@@ -318,13 +339,21 @@ b_u <- edx %>%
   left_join(b_m, by="movieId") %>%
   group_by(userId) %>%
   summarize(b_u = sum(rating - b_m - mu)/(n()+lam))
-                                                  
-# Compute final predictions on final_holdout_test set based on the above movie and user bias terms
-predicted_ratings <- final_holdout_test %>% 
-  left_join(b_m, by = "movieId") %>%
-  left_join(b_u, by = "userId") %>%
-  mutate(pred = mu + b_m + b_u) %>%
+
+# Compute final regularized genre bias term
+b_g <- edx_genres %>% 
+  left_join(b_m, by='movieId') %>%
+  left_join(b_u, by='userId') %>%
+  group_by(genres) %>%
+  summarize(b_g = sum(rating - mu - b_m – b_u)/(n()+lam))
+
+# Compute final predictions on final_holdout_test set based on the above biases
+predicted_ratings <- test_genres %>% 
+  left_join(b_m, by='movieId') %>%
+  left_join(b_u, by='userId') %>%
+  left_join(b_g, by='genres') %>%
+  mutate(pred = mu + b_m + b_u + b_g) %>%
   pull(pred)
-                                                  
+
 # Output final RMSE of these predictions
-RMSE(final_holdout_test$rating, predicted_ratings)
+RMSE(test_genres$rating, predicted_ratings)
