@@ -1,9 +1,8 @@
 ---
 title: "MovieLens Project Report"
 author: "Hannah Puisto"
-date: "12/04/2023"
-output:
-  pdf_document: default
+date: "12/05/2023"
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -35,15 +34,15 @@ options(timeout = 120)
 dl <- "ml-10M100K.zip"
 if(!file.exists(dl))
   download.file("https://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
-​
+
 ratings_file <- "ml-10M100K/ratings.dat"
 if(!file.exists(ratings_file))
   unzip(dl, ratings_file)
-​
+
 movies_file <- "ml-10M100K/movies.dat"
 if(!file.exists(movies_file))
   unzip(dl, movies_file)
-​
+
 ratings <- as.data.frame(str_split(read_lines(ratings_file), fixed("::"), simplify = TRUE),
                          stringsAsFactors = FALSE)
 colnames(ratings) <- c("userId", "movieId", "rating", "timestamp")
@@ -52,31 +51,31 @@ ratings <- ratings %>%
          movieId = as.integer(movieId),
          rating = as.numeric(rating),
          timestamp = as.integer(timestamp))
-​
+
 movies <- as.data.frame(str_split(read_lines(movies_file), fixed("::"), simplify = TRUE),
                         stringsAsFactors = FALSE)
 colnames(movies) <- c("movieId", "title", "genres")
 movies <- movies %>%
   mutate(movieId = as.integer(movieId))
-​
+
 movielens <- left_join(ratings, movies, by = "movieId")
-​
+
 # Final hold-out test set will be 10% of MovieLens data
 set.seed(1, sample.kind="Rounding") # if using R 3.6 or later
 # set.seed(1) # if using R 3.5 or earlier
 test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
 edx <- movielens[-test_index,]
 temp <- movielens[test_index,]
-​
+
 # Make sure userId and movieId in final hold-out test set are also in edx set
 final_holdout_test <- temp %>% 
   semi_join(edx, by = "movieId") %>%
   semi_join(edx, by = "userId")
-​
+
 # Add rows removed from final hold-out test set back into edx set
 removed <- anti_join(temp, final_holdout_test)
 edx <- rbind(edx, removed)
-​
+
 rm(dl, ratings, movies, test_index, temp, movielens, removed)
 ```
 
@@ -87,7 +86,7 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
 In this project, a movie recommendation system will be created to predict the ratings of movies for given users from the MovieLens 10M dataset. We will do this by training a linear model to predict movie ratings and calculate the Root Mean Square Error (RMSE) of the predicted ratings versus the actual ratings. The provided data is a larger dataset from which the *movielens* subset included in the **dslabs** package that we used for exercises in the previous course for machine learning.
 
-The given script splits this larger dataset into a training dataset `edx` and a test dataset `final_holdout_test` 90% and10%, respectively. We will use the training set in the construction of our model and will only use the test dataset to validate our predictions against.
+The given script splits this larger dataset into a training dataset `edx` and a test dataset `final_holdout_test` 90% and 10%, respectively. We will use the training set in the construction of our model and will only use the test dataset to validate our predictions against.
 
 Due to the large size of the dataset, certain machine learning algorithms or data wrangling methods would require too much memory to run on a normal laptop machine in a timely manner. We will create our recommendation system using a linear model as described in the *Methods and Analysis* section of this report. 
 
@@ -126,6 +125,7 @@ hist_movies <- edx %>%
     x = "Movie ID", y = "Number of Ratings", fill = element_blank()
   ) +
   theme_classic()
+hist_movies
 
 # Histogram of ratings per user
 hist_users <- edx %>%
@@ -135,6 +135,7 @@ hist_users <- edx %>%
   labs(title = "Histogram of Ratings per User",
        x = "User ID", y = "Number of Ratings", fill = element_blank()) +
   theme_classic()
+hist_users
 ```
 
 Users were also more likely to provide integer ratings over half-ratings.
@@ -179,6 +180,7 @@ hist_genres <- ggplot(edx_genres, aes(x = reorder(genres, genres, function(x) - 
                       breaks = 10^6 * 1:4) +
   coord_flip() +
   theme_classic()
+hist_genres
 ```
 
 ## Methods and Analysis
@@ -248,7 +250,7 @@ One more way to improve our predictions is to account for the genre bias in a si
   Y_{u,m} = \mu + b_{m} + b_{u} + b_{g}.
 \end{equation}
 
-To account for individual ratings by genre, we created an extended version of the training dataset. As mentioned in the **Data Summary** section of this report, the original training dataset has multiple genres listed for each movie. We created a new dataset that creates an individual row for the rating for each unique genre listed in the original dataset. We will use this extended version of the training dataset to apply our genre bias.
+To account for individual ratings by genre, we created an extended version of the training dataset. As mentioned in the *Data Summary* section of this report, the original training dataset has multiple genres listed for each movie. We created a new dataset that creates an individual row for the rating for each unique genre listed in the original dataset. We will use this extended version of the training dataset to apply our genre bias.
 
 ```{r movie_user_genre_bias_model, echo=TRUE}
 # Create genre bias term, b_g, on extended version of edx
@@ -256,7 +258,7 @@ b_g <- edx_genres %>%
   left_join(b_m, by='movieId') %>%
   left_join(b_u, by='userId') %>%
   group_by(genres) %>%
-  summarize(b_g = mean(rating - mu - b_m – b_u))
+  summarize(b_g = mean(rating - mu - b_m - b_u))
 
 # Predict new ratings for each movie on test dataset using both movie and user biases
 predicted_ratings <- test_genres %>% 
@@ -294,7 +296,7 @@ rmses <- sapply(lambdas, function(l){
     left_join(b_m, by='movieId') %>%
     left_join(b_u, by='userId') %>%
     group_by(genres) %>%
-    summarize(b_g = sum(rating - mu - b_m – b_u)/(n()+l))
+    summarize(b_g = sum(rating - mu - b_m - b_u)/(n()+l))
   # Compute predictions on final_holdout_test set based on the above biases
   predicted_ratings <- test_genres %>% 
     left_join(b_m, by='movieId') %>%
@@ -308,7 +310,7 @@ rmses <- sapply(lambdas, function(l){
 ```
 
 ```{r rmses_vs_lambdas, echo=TRUE}
-qplot(lambdas, rmses)
+ggplot(data.frame(lambdas, rmses), aes(lambdas, rmses)) + geom_line()
 ```
 
 Now we see that the minimizing $\lambda$ term is
@@ -341,7 +343,7 @@ b_g <- edx_genres %>%
   left_join(b_m, by='movieId') %>%
   left_join(b_u, by='userId') %>%
   group_by(genres) %>%
-  summarize(b_g = sum(rating - mu - b_m – b_u)/(n()+lam))
+  summarize(b_g = sum(rating - mu - b_m - b_u)/(n()+lam))
                                                   
 # Compute final predictions on final_holdout_test set based on the above biases
 predicted_ratings <- test_genres %>% 
