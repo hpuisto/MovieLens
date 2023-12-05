@@ -4,7 +4,7 @@
 # Author: Hannah Puisto
 # Date: December 2023
 #
-# Github: https://github.com/hpuisto/movielens
+# Github: https://github.com/hpuisto/MovieLens
 ##########################################################
 
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
