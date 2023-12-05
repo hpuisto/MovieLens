@@ -4,7 +4,6 @@ author: "Hannah Puisto"
 date: "12/04/2023"
 output:
   pdf_document: default
-  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -270,7 +269,7 @@ predicted_ratings <- test_genres %>%
   mutate(pred = mu + b_m + b_u + b_g) %>%
   pull(pred)
 
-# Calculate RMSE of movie and user biases effect
+# Calculate RMSE of movie, user, and genre biases effect
 RMSE(test_genres$rating, predicted_ratings)
 ```
 
